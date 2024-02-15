@@ -45,8 +45,13 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_11_204542) do
     t.integer "wins", default: 0
     t.integer "losses", default: 0
     t.integer "game_id"
+    t.integer "current_player_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["current_player_id"], name: "index_sessions_on_current_player_id"
+    t.index ["game_id"], name: "index_sessions_on_game_id"
   end
 
+  add_foreign_key "sessions", "games"
+  add_foreign_key "sessions", "players", column: "current_player_id"
 end

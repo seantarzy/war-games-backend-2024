@@ -1,6 +1,8 @@
 # require 'rest-client'
 require 'nokogiri'
 class Player < ApplicationRecord
+    has_many :sessions, foreign_key: 'current_player_id'
+    
     PITCHER_STATS = ["W", "L", "SO", "ERA", "IP", "SV"]
     HITTER_STATS = ["HITS", "BA", "HR", "RUNS", "RBI", "SB", "AB"]
 

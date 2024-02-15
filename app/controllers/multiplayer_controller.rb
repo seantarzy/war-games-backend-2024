@@ -74,10 +74,19 @@ class MultiplayerController < ApplicationController
         game = Game.find(params[:game_id])
         player = Player.find(params[:player_id])
         session = Session.find(params[:session_id])
+
+        session.update(current_player: player)
+
+        
         ActionCable.server.broadcast(
             "GameChannel",
             {id: game.id, action: 'card_dealt', player: player, session: session}
         )
+
+        if game.both_cards_dealt?
+            game.handle_current_round
+        end
+
         render json: { message: "Card dealt" }, status: :ok
     end
     
