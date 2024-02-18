@@ -1,7 +1,8 @@
 class Game < ApplicationRecord
-has_many :sessions
-validates_length_of :sessions, maximum: 2
-before_create :generate_invite_code
+    has_many :sessions, dependent: :destroy
+    validates_length_of :sessions, maximum: 2
+    before_create :generate_invite_code
+
 
 
 def both_cards_dealt?

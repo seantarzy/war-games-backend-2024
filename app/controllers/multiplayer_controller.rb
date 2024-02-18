@@ -9,6 +9,7 @@ class MultiplayerController < ApplicationController
           render json: game.errors, status: :unprocessable_entity
         end
     end
+    
 
     def join_game
         # create a new session
@@ -26,6 +27,7 @@ class MultiplayerController < ApplicationController
         else
           render json: game.errors, status: :unprocessable_entity
         end
+
       end
     
       def handle_guest_game_state

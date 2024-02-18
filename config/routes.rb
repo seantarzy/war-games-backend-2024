@@ -15,6 +15,8 @@ Rails.application.routes.draw do
 
   post "deal_card" => "multiplayer#deal_card"
 
+ resources :games, only: [:destroy]
+
   # Defines the root path route ("/")
   mount ActionCable.server => '/cable'
 end
