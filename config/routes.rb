@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
   resources :players, only: [:index, :show]
+  resources :games, only: [:destroy]
+  resources :sessions, only: [:create, :destroy]
+
   get "random_player" => "players#show_random"
 
   post "create_multiplayer_game" => "multiplayer#create_game"
@@ -15,8 +18,6 @@ Rails.application.routes.draw do
 
   post "deal_card" => "multiplayer#deal_card"
 
- resources :games, only: [:destroy]
 
-  # Defines the root path route ("/")
   mount ActionCable.server => '/cable'
 end
