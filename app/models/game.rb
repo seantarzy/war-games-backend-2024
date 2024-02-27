@@ -3,6 +3,7 @@ class Game < ApplicationRecord
     validates_length_of :sessions, maximum: 2
     before_create :generate_invite_code
 
+    WINNING_SCORE = 10
 
 
 def both_cards_dealt?
@@ -30,7 +31,7 @@ def handle_current_round
         ActionCable.server.broadcast("GameChannel", { id: id, action: "round_winner", winner: winner_loser.first, loser: winner_loser.last})
     end
 
-    if sessions.first.current_score == 10 || sessions.second.current_score == 10
+    if sessions.first.current_score == WINNING_SCORE || sessions.second.current_score == WINNING_SCORE
         game_winner = sessions.first.current_score == 10 ? sessions.first : sessions.second
         game_loser = sessions.first.current_score == 10 ? sessions.second : sessions.first
 
