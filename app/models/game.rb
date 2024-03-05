@@ -1,5 +1,6 @@
 class Game < ApplicationRecord
-    has_many :sessions, dependent: :destroy
+    has_many :session_games, dependent: :destroy
+    has_many :sessions, through: :session_games
     validates_length_of :sessions, maximum: 2
     before_create :generate_invite_code
 
@@ -47,6 +48,23 @@ def handle_current_round
     end
 end
 
+def restart!
+    transaction do
+      sessions.each do |session|
+        # Deactivate current session games and create new ones
+        current_session_game = session.active_session_game
+        current_session_game&.update!(active: false) if current_session_game
+
+        SessionGame.create!(session: session, game: self, active: true)
+      end
+    end
+    ActionCable.server.broadcast("GameChannel", { id: id, action: "game_restart" })
+
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "Failed to restart game: #{e.message}"
+    # Consider re-raising the exception or handling it appropriately
+    # to notify the caller of this method that the restart failed.
+  end
 
 
 private

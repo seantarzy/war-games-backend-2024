@@ -12,6 +12,9 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development"
+    
+# Set the Litestream data path
+ENV LITESTREAM_DATA_PATH=/data
 
 
 # Throw-away build stage to reduce size of final image
@@ -20,6 +23,10 @@ FROM base as build
 # Install packages needed to build gems
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libvips pkg-config
+
+# Install packages needed to build gems and for PostgreSQL
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential git libvips pkg-config libpq-dev
 
 # Install application gems
 COPY Gemfile Gemfile.lock ./
@@ -31,16 +38,16 @@ RUN bundle install && \
 COPY . .
 
 # Precompile bootsnap code for faster boot times
-RUN bundle exec bootsnap precompile app/ lib/
+# RUN bundle exec bootsnap precompile app/ lib/
 
 
 # Final stage for app image
 FROM base
 
-# Install packages needed for deployment
+# Install runtime dependencies
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libsqlite3-0 libvips && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    apt-get install --no-install-recommends -y curl libsqlite3-0 libvips libpq5 && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 # Copy built artifacts: gems, application
 COPY --from=build /usr/local/bundle /usr/local/bundle

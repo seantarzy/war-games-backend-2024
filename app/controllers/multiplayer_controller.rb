@@ -3,7 +3,8 @@ class MultiplayerController < ApplicationController
     def create_game
         game = Game.create
         if game.valid?
-          host_session = Session.create(game_id: game.id)
+          host_session = Session.create()
+          host_session_game = SessionGame.create(session: host_session, game: game, active: true)
           render json: { game: game, session: host_session }, status: :created
         else
           render json: game.errors, status: :unprocessable_entity
@@ -16,8 +17,9 @@ class MultiplayerController < ApplicationController
         # if theyre joining a game, the game should be findable by the game's invite code
         game = Game.find_by(invite_code: params[:invite_code])
     
-        if game.valid?
-            guest_session = Session.create(game_id: game.id)
+        if game.valid? && game.sessions.count < 2
+            guest_session = Session.create()
+            guest_session_game = SessionGame.create(session: guest_session, game: game, active: true)
     
 
             return render json: { error: "failed to create session" }, status: :unprocessable_entity if guest_session.nil?
@@ -75,15 +77,49 @@ class MultiplayerController < ApplicationController
       end
 
 
+    def refresh_card
+        
+        game = Game.find(params[:game_id])
+        validate_session_number_for_card_deal!(game)
+        
+        session = Session.find(params[:session_id])
+
+        session_game = session.active_session_game
+
+        if !session_game.can_refresh?
+            return render json: { error: "Cannot refresh card" }, status: :unprocessable_entity
+        end
+        
+        new_card = Player.draw_card
+        session_game.update(current_player: new_card)
+        session_game.increment!(:refreshes)
+        render json: { card: new_card, session: session }, status: :ok
+    end
+
+    def draw_card
+        game = Game.find(params[:game_id])
+        validate_session_number_for_card_deal!(game)
+        rando = Player.draw_card
+        session = Session.find(params[:session_id])
+        session_game = session.active_session_game
+        session_game.update(current_player: rando)
+      #  we only send the card to the current player, so don't need to broadcast
+        render json: { card: rando, session: session }, status: :ok
+    end
 
     def deal_card
         game = Game.find(params[:game_id])
         validate_session_number_for_card_deal!(game)
-        player = Player.find(params[:player_id])
         session = Session.find(params[:session_id])
+        session_game = session.active_session_game
+        if session_game.current_player.blank?
+          return render json: { error: "No current player. Player needs to draw a card before dealing it" }, status: :unprocessable_entity
+        end
 
-        session.update(current_player: player)
-
+        player = Player.find(params[:player_id])
+        if session_game.current_player != player
+          return render json: { error: "Player card dealt does not match current player card drawn" }, status: :unprocessable_entity
+        end
         
         ActionCable.server.broadcast(
             "GameChannel",

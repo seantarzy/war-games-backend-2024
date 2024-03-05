@@ -1,6 +1,16 @@
 class Session < ApplicationRecord
-    belongs_to :game
+  has_many :session_games, dependent: :destroy
+  has_one :active_session_game, -> { where(active: true) }, class_name: 'SessionGame'
+  
   # Specifying the association to Player with a custom foreign key
-    belongs_to :current_player, class_name: 'Player', foreign_key: 'current_player_id', optional: true
 
+  def activate_session_game(new_active_session_game)
+    SessionGame.transaction do
+      active_session_game&.update!(active: false) # Deactivate the current active session_game if any
+      new_active_session_game.update!(active: true) # Activate the new one
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    # Handle the exception, maybe log it or notify someone
+    Rails.logger.error "Failed to activate session game: #{e.message}"
+  end
 end

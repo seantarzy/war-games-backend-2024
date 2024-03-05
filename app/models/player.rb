@@ -100,4 +100,8 @@ class Player < ApplicationRecord
             sleep(5)
         end
     end
+
+    def draw_random
+        Player.all.sample
+    end
 end
