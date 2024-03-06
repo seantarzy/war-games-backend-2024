@@ -15,7 +15,8 @@ class SessionGame < ApplicationRecord
     private
 
     def activate
-        session.activate_session_game(self)
+        self.active = true
+        save!
     end
 
 end

@@ -1,6 +1,6 @@
 class Game < ApplicationRecord
     has_many :session_games, dependent: :destroy
-    has_many :sessions, through: :session_games
+    has_many :sessions, through: :session_games, dependent: :destroy
     validates_length_of :sessions, maximum: 2
     before_create :generate_invite_code
 
@@ -8,20 +8,25 @@ class Game < ApplicationRecord
 
 
 def both_cards_dealt?
-    sessions.all? { |session| session.current_player.present? }
+    session_games.all? { |sg| sg.current_player.present? }
 end
 
-def handle_current_round
+def handle_current_round!
+    return unless both_cards_dealt?
+
+    first_session_game = session_games.first
+    second_session_game = session_games.second
+
     winner_loser = begin 
-        if sessions.first.current_player.war > sessions.second.current_player.war
-            sessions.first.increment!(:current_score)
-            [sessions.first, sessions.second]
-        elsif sessions.first.current_player.war  < sessions.second.current_player.war
-            sessions.second.increment!(:current_score)
-            [sessions.second, sessions.first]
-        elsif sessions.first.current_player.war  == sessions.second.current_player.war
-            sessions.first.increment!(:current_score)
-            sessions.second.increment!(:current_score)
+        if first_session_game.current_player.war > second_session_game.current_player.war
+            first_session_game.increment!(:current_score)
+            [first_session_game, second_session_game]
+        elsif first_session_game.current_player.war < second_session_game.current_player.war
+            second_session_game.increment!(:current_score)
+            [second_session_game, first_session_game]
+        elsif first_session_game.current_player.war == second_session_game.current_player.war
+            first_session_game.increment!(:current_score)
+            second_session_game.increment!(:current_score)
             "tie"
         end
     end
@@ -32,19 +37,19 @@ def handle_current_round
         ActionCable.server.broadcast("GameChannel", { id: id, action: "round_winner", winner: winner_loser.first, loser: winner_loser.last})
     end
 
-    if sessions.first.current_score == WINNING_SCORE || sessions.second.current_score == WINNING_SCORE
-        game_winner = sessions.first.current_score == 10 ? sessions.first : sessions.second
-        game_loser = sessions.first.current_score == 10 ? sessions.second : sessions.first
+    if first_session_game.current_score == WINNING_SCORE || second_session_game.current_score == WINNING_SCORE
+        game_winner = first_session_game.current_score == 10 ? sessions.first : sessions.second
+        game_loser = first_session_game.current_score == 10 ? sessions.second : sessions.first
 
-        game_winner.increment!(:wins)
-        game_loser.increment!(:losses)
+        game_winner.active_session_game.increment!(:wins)
+        game_loser.active_session_game.increment!(:losses)
 
-        ActionCable.server.broadcast("GameChannel", { id: id, action: "game_winner", winner: game_winner, loser: game_loser})
+        ActionCable.server.broadcast("GameChannel", { id: id, action: "game_winner", winner: game_winner, loser: game_loser })
     end
 
     # cleanup
     sessions.each do |session|
-        session.update(current_player: nil)
+        session.active_session_game.update(current_player: nil)
     end
 end
 
@@ -65,6 +70,15 @@ def restart!
     # Consider re-raising the exception or handling it appropriately
     # to notify the caller of this method that the restart failed.
   end
+
+  def self.broadcast_invalid_game(id)
+    # could be an invalid id therefore channel a client is subscribed to
+    ActionCable.server.broadcast("GameChannel", { action: "invalid_game", id: id })
+  end
+
+ def brodcast_invalid_game
+    self.class.broadcast_invalid_game(id)
+  end 
 
 
 private

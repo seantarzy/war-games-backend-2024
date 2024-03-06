@@ -9,4 +9,4 @@
 #   end
 # player: {:name=>"Babe Ruth", "WAR"=>"182.6", "AB"=>"8399", "position"=>"H", "H"=>"2873", "HR"=>"714", "BA"=>".342", "R"=>"2174", "RBI"=>"2214", "SB"=>"123"}}name: Babe Ruthplayer: {"Walter Johnson"=>{:name=>"Walter Johnson", "WAR"=>"165.1", "W"=>"417", "position"=>"P", "L"=>"279", "ERA"=>"2.17", "G"=>"802", "GS"=>"666", "SV"=>"34"} ayer: {:name=>"Cy Young", "WAR"=>"163.6", "W"=>"511", "position"=>"P", "L"=>"315", "ERA"=>"2.63", "G"=>"906", "GS"=>"815", "SV"=>"18"}
 p "seeding players"
-Player.create_players
+Player.create_players(10)

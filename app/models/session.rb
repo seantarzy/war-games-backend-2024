@@ -13,4 +13,12 @@ class Session < ApplicationRecord
     # Handle the exception, maybe log it or notify someone
     Rails.logger.error "Failed to activate session game: #{e.message}"
   end
+
+  def active_session_game
+   @active_session_game ||= session_games.find_by(active: true)
+  end
+
+  def current_player
+    active_session_game&.current_player
+  end
 end

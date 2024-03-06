@@ -8,7 +8,7 @@ Rails.application.routes.draw do
   resources :games, only: [:destroy]
   resources :sessions, only: [:create, :destroy]
 
-  get "random_player" => "players#show_random"
+  post "draw_random_card" => "multiplayer#draw_card"
 
   post "create_multiplayer_game" => "multiplayer#create_game"
   post "join_multiplayer_game" => "multiplayer#join_game"

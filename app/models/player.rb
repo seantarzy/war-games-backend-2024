@@ -62,8 +62,8 @@ class Player < ApplicationRecord
     end
 
 
-    def self.create_players
-        player_names_with_links.map do |player|
+    def self.create_players(limit=100)
+        player_names_with_links[0..limit].map do |player|
             player_name = player[:name]
 
             if Player.find_by(name: player_name)
@@ -101,7 +101,7 @@ class Player < ApplicationRecord
         end
     end
 
-    def draw_random
+    def self.draw_random
         Player.all.sample
     end
 end
