@@ -16,7 +16,9 @@ Rails.application.routes.draw do
   get "handle_guest_game_state" => "multiplayer#handle_guest_game_state"
   get "handle_host_game_state" => "multiplayer#handle_host_game_state"
 
-  post "deal_card" => "multiplayer#deal_card"
+  post "draw_card" => "multiplayer#draw_card"
+
+  post "deal_card" => "multiplayer#send_card_dealt"
 
 
   mount ActionCable.server => '/cable'

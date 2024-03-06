@@ -74,21 +74,44 @@ class MultiplayerController < ApplicationController
         render json: { game: game }, status: :ok
       end
 
-
-
-    def deal_card
-        game = Game.find(params[:game_id])
+    
+    def draw_card
+        game = Game.find_by(id: params[:game_id])
         validate_session_number_for_card_deal!(game)
-        player = Player.find(params[:player_id])
+
+        player = Player.all.sample
         session = Session.find(params[:session_id])
 
         session.update(current_player: player)
 
+        # don't need to broadcast the card draw, just the card deal, because only the current player can draw a card and know what it is
+        render json: player, status: :ok
+    end
+
+    def send_card_dealt
+        game = Game.find(params[:game_id])
+        validate_session_number_for_card_deal!(game)
+
+        
+        session = Session.find(params[:session_id])
+        current_player = session.current_player
+
+        if current_player.nil?
+            return render json: { error: "No current player" }, status: :unprocessable_entity
+        end
+
         
         ActionCable.server.broadcast(
             "GameChannel",
-            {id: game.id, action: 'card_dealt', player: player, session: session}
+            {id: game.id, action: 'card_dealt', player: current_player, session: session}
         )
+
+        session.update!(card_dealt: true)
+
+        # this is why! 
+        #  now there is a difference between 'card drawn' and 'card dealt'
+        # card drawn is when the player draws a card, and only they know what it is, but it is tied to the session
+        # card dealt is when the player has drawn a card, and it is broadcast to all players, and the game can check
 
         if game.both_cards_dealt?
             game.handle_current_round
@@ -100,7 +123,7 @@ class MultiplayerController < ApplicationController
     private
 
     def validate_session_number_for_card_deal!(game)
-      if game.sessions.count != 2
+      if !game || game.sessions.count != 2
         # this is possible when both users join a game, but one of them leaves before the game ends (when the other user is dealing a card)
         # so we need to tell the user the game is invalid
           ActionCable.server.broadcast("GameChannel", { action: 'invalid_game', id: game.id })

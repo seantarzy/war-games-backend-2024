@@ -7,7 +7,7 @@ class Game < ApplicationRecord
 
 
 def both_cards_dealt?
-    sessions.all? { |session| session.current_player.present? }
+    sessions.all? { |session| !!session.card_dealt }
 end
 
 def handle_current_round

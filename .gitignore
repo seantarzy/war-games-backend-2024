@@ -11,6 +11,11 @@
 /.env*
 !/.env*.erb
 
+/vendor/bundle
+/node_modules
+/storage/*
+/db/development/
+
 # Ignore all logfiles and tempfiles.
 /log/*
 /tmp/*
