@@ -88,6 +88,18 @@ class MultiplayerController < ApplicationController
         render json: player, status: :ok
     end
 
+    def current_score
+        game = Game.find(params[:game_id])
+        session = Session.find(params[:session_id])
+
+        current_session_score = game.sessions.find(session.id).current_score
+
+        opponent_score = game.sessions.where.not(id: session.id).first.current_score
+
+        render json: { my_score: current_session_score, opponent_score: opponent_score }, status: :ok
+
+    end
+
     def send_card_dealt
         game = Game.find(params[:game_id])
         validate_session_number_for_card_deal!(game)

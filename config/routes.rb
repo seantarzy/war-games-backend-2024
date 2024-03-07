@@ -8,6 +8,11 @@ Rails.application.routes.draw do
   resources :games, only: [:destroy]
   resources :sessions, only: [:create, :destroy]
 
+  resources :games do
+    post :restart, on: :member
+  end
+
+
   get "random_player" => "players#show_random"
 
   post "create_multiplayer_game" => "multiplayer#create_game"
@@ -19,7 +24,7 @@ Rails.application.routes.draw do
   post "draw_card" => "multiplayer#draw_card"
 
   post "deal_card" => "multiplayer#send_card_dealt"
-
+  get "current_score" => "multiplayer#current_score"
 
   mount ActionCable.server => '/cable'
 end
