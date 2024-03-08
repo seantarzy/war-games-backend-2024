@@ -44,6 +44,7 @@ def handle_current_round
     # cleanup
     sessions.each do |session|
         session.update(current_player: nil)
+        session.update(card_dealt: false)
     end
 end
 

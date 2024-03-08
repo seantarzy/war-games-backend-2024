@@ -74,10 +74,10 @@ class MultiplayerController < ApplicationController
         render json: { game: game }, status: :ok
       end
 
-    
+
     def draw_card
         game = Game.find_by(id: params[:game_id])
-        validate_session_number_for_card_deal!(game)
+        validate_session_number_for_gameplay!(game)
 
         player = Player.all.sample
         session = Session.find(params[:session_id])
@@ -102,14 +102,14 @@ class MultiplayerController < ApplicationController
 
     def send_card_dealt
         game = Game.find(params[:game_id])
-        validate_session_number_for_card_deal!(game)
+        validate_session_number_for_gameplay!(game)
 
         
         session = Session.find(params[:session_id])
         current_player = session.current_player
 
         if current_player.nil?
-            return render json: { error: "No current player" }, status: :unprocessable_entity
+            return render json: { error: "User must draw a player before dealing" }, status: :unprocessable_entity
         end
 
         
@@ -120,11 +120,15 @@ class MultiplayerController < ApplicationController
 
         session.update!(card_dealt: true)
 
+        # problem: 
+        #  1. we draw a card
+        # 2. opponent draws and sends a card
+        # we get an error sending because rails thinks we're sending a get request when deal_card is a post request
         # this is why! 
         #  now there is a difference between 'card drawn' and 'card dealt'
         # card drawn is when the player draws a card, and only they know what it is, but it is tied to the session
-        # card dealt is when the player has drawn a card, and it is broadcast to all players, and the game can check
-
+        # so the round thinks that both players have dealt simply by having a player attached to the session
+        # when in reality they need the card_dealt flag to be true
         if game.both_cards_dealt?
             game.handle_current_round
         end
@@ -134,7 +138,7 @@ class MultiplayerController < ApplicationController
 
     private
 
-    def validate_session_number_for_card_deal!(game)
+    def validate_session_number_for_gameplay!(game)
       if !game || game.sessions.count != 2
         # this is possible when both users join a game, but one of them leaves before the game ends (when the other user is dealing a card)
         # so we need to tell the user the game is invalid
