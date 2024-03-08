@@ -10,7 +10,7 @@ def both_cards_dealt?
     sessions.all? { |session| !!session.card_dealt }
 end
 
-def handle_current_round
+def handle_current_round!
     winner_loser = begin 
         if sessions.first.current_player.war > sessions.second.current_player.war
             sessions.first.increment!(:current_score)
@@ -46,6 +46,8 @@ def handle_current_round
         session.update(current_player: nil)
         session.update(card_dealt: false)
     end
+
+    return {winner: winner_loser.first, loser: winner_loser.last}
 end
 
 

@@ -100,6 +100,7 @@ class MultiplayerController < ApplicationController
 
     end
 
+    # weird way of saying 'deal card' but need to be clear that we're flipping an important 'card dealt' flag
     def send_card_dealt
         game = Game.find(params[:game_id])
         validate_session_number_for_gameplay!(game)
@@ -129,11 +130,14 @@ class MultiplayerController < ApplicationController
         # card drawn is when the player draws a card, and only they know what it is, but it is tied to the session
         # so the round thinks that both players have dealt simply by having a player attached to the session
         # when in reality they need the card_dealt flag to be true
+        battle_response = {ready: false}
         if game.both_cards_dealt?
-            game.handle_current_round
+            winner_loser =  game.handle_current_round!
+            battle_response[:ready] = true
+            battle_response.merge!(**winner_loser)
         end
 
-        render json: { message: "Card dealt" }, status: :ok
+        render json: { message: "Card dealt", battle_response: battle_response }, status: :ok
     end
 
     private
