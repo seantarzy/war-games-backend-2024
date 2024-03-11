@@ -12,24 +12,25 @@ class GamesController < ApplicationController
          game = Game.find_by(id: params[:id])
          return render json: { error: "Game not found" }, status: :not_found if game.nil?
          return render json: game.errors, status: :unprocessable_entity unless game.valid?
-
+         
          requesting_session = Session.find_by(id: params[:session_id])
+
          return render json: { error: "Session not found" }, status: :not_found if requesting_session.nil?
 
          return render json: { error: "Unauthorized" }, status: :unauthorized if game.sessions.exclude?(requesting_session)
 
-         game.sessions.each do |session|
-             session.update(current_score: 0, card_dealt: false, current_player: nil)
+
+         requesting_session.update(game_ready: true)
+         if game.both_sessions_game_ready?
+            ActionCable.server.broadcast("GameChannel", { action: 'game_restart', id: game.id })
+            render json: { message: "Game restarted" }, status: :ok
+         else
+            ActionCable.server.broadcast("GameChannel", { action: 'rematch_requested', id: game.id, requesting_session: requesting_session})
+            render json: { message: "Rematch requested" }, status: :ok
          end
-
-         # will in the future have functionality to have other player accept rematch
-         GameChannel.broadcast_to(game, { id: game.id, action: "game_restart" })
-
-         render json: { message: "Game restarted" }, status: :ok
 
       rescue StandardError => e
          render json: { error: e.message }, status: :internal_server_error
-     end
     end
 
 

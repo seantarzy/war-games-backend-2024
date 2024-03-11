@@ -23,8 +23,9 @@ Rails.application.routes.draw do
 
   post "draw_card" => "multiplayer#draw_card"
 
+  post "restart_game" => "games#restart"
   post "deal_card" => "multiplayer#send_card_dealt"
   get "current_score" => "multiplayer#current_score"
-
+  get "current_sessions_state" => "multiplayer#current_sessions_state"
   mount ActionCable.server => '/cable'
 end
