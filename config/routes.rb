@@ -7,6 +7,9 @@ Rails.application.routes.draw do
   resources :players, only: [:index, :show]
   resources :games, only: [:destroy]
   resources :sessions, only: [:create, :destroy]
+  resources :sessions do
+    get :refreshes_left, on: :member
+  end
 
   resources :games do
     post :restart, on: :member
