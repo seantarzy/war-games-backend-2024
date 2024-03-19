@@ -7,6 +7,14 @@ Rails.application.routes.draw do
   resources :players, only: [:index, :show]
   resources :games, only: [:destroy]
   resources :sessions, only: [:create, :destroy]
+  resources :sessions do
+    get :refreshes_left, on: :member
+  end
+
+  resources :games do
+    post :restart, on: :member
+  end
+
 
   get "random_player" => "players#show_random"
 
@@ -16,8 +24,11 @@ Rails.application.routes.draw do
   get "handle_guest_game_state" => "multiplayer#handle_guest_game_state"
   get "handle_host_game_state" => "multiplayer#handle_host_game_state"
 
-  post "deal_card" => "multiplayer#deal_card"
+  post "draw_card" => "multiplayer#draw_card"
 
-
+  post "restart_game" => "games#restart"
+  post "deal_card" => "multiplayer#send_card_dealt"
+  get "current_score" => "multiplayer#current_score"
+  get "current_sessions_state" => "multiplayer#current_sessions_state"
   mount ActionCable.server => '/cable'
 end

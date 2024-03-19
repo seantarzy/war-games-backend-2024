@@ -3,14 +3,18 @@ class Game < ApplicationRecord
     validates_length_of :sessions, maximum: 2
     before_create :generate_invite_code
 
-    WINNING_SCORE = 10
+    WINNING_SCORE = 2
 
 
 def both_cards_dealt?
-    sessions.all? { |session| session.current_player.present? }
+    sessions.all? { |session| !!session.card_dealt }
 end
 
-def handle_current_round
+def both_sessions_game_ready?
+    sessions.all? { |session| !!session.game_ready }
+end
+
+def handle_current_round!
     winner_loser = begin 
         if sessions.first.current_player.war > sessions.second.current_player.war
             sessions.first.increment!(:current_score)
@@ -32,19 +36,19 @@ def handle_current_round
     end
 
     if sessions.first.current_score == WINNING_SCORE || sessions.second.current_score == WINNING_SCORE
-        game_winner = sessions.first.current_score == 10 ? sessions.first : sessions.second
-        game_loser = sessions.first.current_score == 10 ? sessions.second : sessions.first
+        game_winner = sessions.first.current_score == WINNING_SCORE ? sessions.first : sessions.second
+        game_loser = sessions.first.current_score == WINNING_SCORE ? sessions.second : sessions.first
 
         game_winner.increment!(:wins)
         game_loser.increment!(:losses)
-
         ActionCable.server.broadcast("GameChannel", { id: id, action: "game_winner", winner: game_winner, loser: game_loser})
+        Session.game_cleanup!(sessions)
+        return {winner: game_winner, loser: game_loser}
     end
 
-    # cleanup
-    sessions.each do |session|
-        session.update(current_player: nil)
-    end
+    Session.battle_cleanup!(sessions)
+
+    return {winner: winner_loser.first, loser: winner_loser.last}
 end
 
 

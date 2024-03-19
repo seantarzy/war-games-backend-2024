@@ -75,32 +75,95 @@ class MultiplayerController < ApplicationController
       end
 
 
+    def draw_card
+        game = Game.find_by(id: params[:game_id])
+        validate_session_number_for_gameplay!(game)
 
-    def deal_card
-        game = Game.find(params[:game_id])
-        validate_session_number_for_card_deal!(game)
-        player = Player.find(params[:player_id])
+        player = Player.all.sample
         session = Session.find(params[:session_id])
 
         session.update(current_player: player)
+        session.increment!(:refreshes)
+
+        # don't need to broadcast the card draw, just the card deal, because only the current player can draw a card and know what it is
+        render json: {player: player,refreshes_left: session.refreshes_left}, status: :ok
+    end
+
+    def current_sessions_state
+      # did i draw a card?
+      # did my opponent deal a card?
+      # did i deal a card?
+      game = Game.find(params[:game_id])
+      sessions = game.sessions
+      session1 = sessions.first
+      session2 = sessions.second
+
+      session1_card = session1.current_player
+      session2_card = session2.current_player
+
+      session1_dealt = session1.card_dealt
+      session2_dealt = session2.card_dealt
+
+      render json: { session1: { id: session1.id, card: session1_card, dealt: session1_dealt }, session2: { id: session2.id, card: session2_card, dealt: session2_dealt } }, status: :ok
+
+    end
+
+    def current_score
+        game = Game.find(params[:game_id])
+        session = Session.find(params[:session_id])
+
+        current_session_score = game.sessions.find(session.id).current_score
+
+        opponent_score = game.sessions.where.not(id: session.id).first.current_score
+
+        render json: { my_score: current_session_score, opponent_score: opponent_score }, status: :ok
+
+    end
+
+    # weird way of saying 'deal card' but need to be clear that we're flipping an important 'card dealt' flag
+    def send_card_dealt
+        game = Game.find(params[:game_id])
+        validate_session_number_for_gameplay!(game)
+
+        
+        session = Session.find(params[:session_id])
+        current_player = session.current_player
+
+        if current_player.nil?
+            return render json: { error: "User must draw a player before dealing" }, status: :unprocessable_entity
+        end
 
         
         ActionCable.server.broadcast(
             "GameChannel",
-            {id: game.id, action: 'card_dealt', player: player, session: session}
+            {id: game.id, action: 'card_dealt', player: current_player, session: session}
         )
 
+        session.update!(card_dealt: true)
+
+        # problem: 
+        #  1. we draw a card
+        # 2. opponent draws and sends a card
+        # we get an error sending because rails thinks we're sending a get request when deal_card is a post request
+        # this is why! 
+        #  now there is a difference between 'card drawn' and 'card dealt'
+        # card drawn is when the player draws a card, and only they know what it is, but it is tied to the session
+        # so the round thinks that both players have dealt simply by having a player attached to the session
+        # when in reality they need the card_dealt flag to be true
+        battle_response = {ready: false}
         if game.both_cards_dealt?
-            game.handle_current_round
+            winner_loser =  game.handle_current_round!
+            battle_response[:ready] = true
+            battle_response.merge!(**winner_loser)
         end
 
-        render json: { message: "Card dealt" }, status: :ok
+        render json: { message: "Card dealt", battle_response: battle_response }, status: :ok
     end
 
     private
 
-    def validate_session_number_for_card_deal!(game)
-      if game.sessions.count != 2
+    def validate_session_number_for_gameplay!(game)
+      if !game || game.sessions.count != 2
         # this is possible when both users join a game, but one of them leaves before the game ends (when the other user is dealing a card)
         # so we need to tell the user the game is invalid
           ActionCable.server.broadcast("GameChannel", { action: 'invalid_game', id: game.id })
