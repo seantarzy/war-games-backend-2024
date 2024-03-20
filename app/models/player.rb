@@ -63,7 +63,7 @@ class Player < ApplicationRecord
 
 
     def self.create_players
-        player_names_with_links[0..10].map do |player|
+        player_names_with_links.map do |player|
             player_name = player[:name]
 
             if Player.find_by(name: player_name)
