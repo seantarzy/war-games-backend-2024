@@ -94,15 +94,18 @@ class MultiplayerController < ApplicationController
       # did my opponent deal a card?
       # did i deal a card?
       game = Game.find(params[:game_id])
+      if game.nil?
+        return render json: { error: "Game not found" }, status: :not_found
+      end
       sessions = game.sessions
-      session1 = sessions.first
-      session2 = sessions.second
+      session1 = sessions&.first
+      session2 = sessions&.second
 
-      session1_card = session1.current_player
-      session2_card = session2.current_player
+      session1_card = session1&.current_player
+      session2_card = session2&.current_player
 
-      session1_dealt = session1.card_dealt
-      session2_dealt = session2.card_dealt
+      session1_dealt = session1&.card_dealt
+      session2_dealt = session2&.card_dealt
 
       render json: { session1: { id: session1.id, card: session1_card, dealt: session1_dealt }, session2: { id: session2.id, card: session2_card, dealt: session2_dealt } }, status: :ok
 
