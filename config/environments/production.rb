@@ -37,7 +37,8 @@ Rails.application.configure do
   # config.action_cable.url = "wss://example.com/cable"
   config.action_cable.allowed_request_origins = [
     'https://war-games-2-0-api-red-tree-4407.fly.dev',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://main--war-games.netlify.app/',
     # Add any other origins you want to allow
   ]
   # config.action_cable.allowed_request_origins = [ "http://example.com", /http:\/\/example.*/ ]
