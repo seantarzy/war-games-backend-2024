@@ -107,7 +107,7 @@ class MultiplayerController < ApplicationController
       session1_dealt = session1&.card_dealt
       session2_dealt = session2&.card_dealt
 
-      render json: { session1: { id: session1.id, card: session1_card, dealt: session1_dealt }, session2: { id: session2.id, card: session2_card, dealt: session2_dealt } }, status: :ok
+      render json: { session1: { id: session1&.id, card: session1_card, dealt: session1_dealt }, session2: { id: session2&.id, card: session2_card, dealt: session2_dealt } }, status: :ok
 
     end
 
