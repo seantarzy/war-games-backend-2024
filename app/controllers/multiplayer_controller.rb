@@ -16,7 +16,7 @@ class MultiplayerController < ApplicationController
         # if theyre joining a game, the game should be findable by the game's invite code
         game = Game.find_by(invite_code: params[:invite_code])
     
-        if game.valid?
+        if game.present? && game.valid?
             guest_session = Session.create(game_id: game.id)
     
 
@@ -83,9 +83,23 @@ class MultiplayerController < ApplicationController
         session = Session.find(params[:session_id])
 
         session.update(current_player: player)
+        # don't need to broadcast the card draw, just the card deal, because only the current player can draw a card and know what it is
+        render json: {player: player}, status: :ok
+    end
+
+    def refresh_card
+        game = Game.find(params[:game_id])
+        validate_session_number_for_gameplay!(game)
+
+        session = Session.find(params[:session_id])
+        if session.refreshes_left <= 0
+            return render json: { error: "No refreshes left" }, status: :unprocessable_entity
+        end
+
+        player = Player.all.sample
+        session.update(current_player: player)
         session.increment!(:refreshes)
 
-        # don't need to broadcast the card draw, just the card deal, because only the current player can draw a card and know what it is
         render json: {player: player,refreshes_left: session.refreshes_left}, status: :ok
     end
 
@@ -94,17 +108,20 @@ class MultiplayerController < ApplicationController
       # did my opponent deal a card?
       # did i deal a card?
       game = Game.find(params[:game_id])
+      if game.nil?
+        return render json: { error: "Game not found" }, status: :not_found
+      end
       sessions = game.sessions
-      session1 = sessions.first
-      session2 = sessions.second
+      session1 = sessions&.first
+      session2 = sessions&.second
 
-      session1_card = session1.current_player
-      session2_card = session2.current_player
+      session1_card = session1&.current_player
+      session2_card = session2&.current_player
 
-      session1_dealt = session1.card_dealt
-      session2_dealt = session2.card_dealt
+      session1_dealt = session1&.card_dealt
+      session2_dealt = session2&.card_dealt
 
-      render json: { session1: { id: session1.id, card: session1_card, dealt: session1_dealt }, session2: { id: session2.id, card: session2_card, dealt: session2_dealt } }, status: :ok
+      render json: { session1: { id: session1&.id, card: session1_card, dealt: session1_dealt }, session2: { id: session2&.id, card: session2_card, dealt: session2_dealt } }, status: :ok
 
     end
 
@@ -112,9 +129,10 @@ class MultiplayerController < ApplicationController
         game = Game.find(params[:game_id])
         session = Session.find(params[:session_id])
 
-        current_session_score = game.sessions.find(session.id).current_score
 
-        opponent_score = game.sessions.where.not(id: session.id).first.current_score
+        current_session_score = game.sessions.find(session.id).current_score || 0
+
+        opponent_score = game.sessions.where.not(id: session.id)&.first&.current_score || 0
 
         render json: { my_score: current_session_score, opponent_score: opponent_score }, status: :ok
 
