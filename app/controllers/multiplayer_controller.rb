@@ -84,7 +84,7 @@ class MultiplayerController < ApplicationController
 
         session.update(current_player: player)
         # don't need to broadcast the card draw, just the card deal, because only the current player can draw a card and know what it is
-        render json: {player: player,refreshes_left: session.refreshes_left}, status: :ok
+        render json: {player: player}, status: :ok
     end
 
     def refresh_card

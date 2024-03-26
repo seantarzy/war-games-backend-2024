@@ -3,7 +3,7 @@ class Game < ApplicationRecord
     validates_length_of :sessions, maximum: 2
     before_create :generate_invite_code
 
-    WINNING_SCORE = ENV["WINNING_SCORE"].to_i
+    WINNING_SCORE = ENV.fetch("WINNING_SCORE",10).to_i
 
 
 def both_cards_dealt?
