@@ -3,7 +3,7 @@ class Session < ApplicationRecord
   # Specifying the association to Player with a custom foreign key
     belongs_to :current_player, class_name: 'Player', foreign_key: 'current_player_id', optional: true
 
-    REFRESH_LIMIT = 3
+    REFRESH_LIMIT = ENV["REFRESH_LIMIT"].to_i
 
     def self.game_cleanup!(sessions)
         sessions.each do |session|

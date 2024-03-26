@@ -34,6 +34,9 @@ console_command = '/rails/bin/rails console'
 
     [checks.status.headers]
       X-Forwarded-Proto = 'https'
+[env]
+  REFRESH_LIMIT=5
+  WINNING_SCORE=10      
 
 [[vm]]
   memory = '1gb'

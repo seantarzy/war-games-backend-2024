@@ -25,7 +25,7 @@ Rails.application.routes.draw do
   get "handle_host_game_state" => "multiplayer#handle_host_game_state"
 
   post "draw_card" => "multiplayer#draw_card"
-
+  post "refresh_card" => "multiplayer#refresh_card"
   post "restart_game" => "games#restart"
   post "deal_card" => "multiplayer#send_card_dealt"
   get "current_score" => "multiplayer#current_score"
