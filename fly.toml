@@ -39,9 +39,9 @@ console_command = '/rails/bin/rails console'
   WINNING_SCORE=10      
 
 [[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
-  cpus = 1
+  size = "shared-cpu-1x"
+  count = 1
+  memory = "256"
 
 [[statics]]
   guest_path = '/rails/public'
