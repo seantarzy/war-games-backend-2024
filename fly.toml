@@ -1,16 +1,13 @@
-# fly.toml app configuration file generated for war-games-2-0-api-red-tree-4407 on 2024-03-18T23:37:46-04:00
+# fly.toml app configuration file generated for war-games-2-0-api on 2024-03-30T14:22:47-04:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'war-games-2-0-api-red-tree-4407'
+app = 'war-games-2-0-api'
 primary_region = 'ewr'
 console_command = '/rails/bin/rails console'
 
 [build]
-
-[deploy]
-  release_command = './bin/rails db:prepare'
 
 [http_service]
   internal_port = 3000
@@ -29,20 +26,11 @@ console_command = '/rails/bin/rails console'
     grace_period = '5s'
     method = 'GET'
     path = '/up'
-    protocol = 'https'
+    protocol = 'http'
     tls_skip_verify = false
 
     [checks.status.headers]
       X-Forwarded-Proto = 'https'
-[env]
-  REFRESH_LIMIT=5
-  WINNING_SCORE=10      
 
 [[vm]]
-  size = "shared-cpu-1x"
-  count = 1
-  memory = "256"
-
-[[statics]]
-  guest_path = '/rails/public'
-  url_prefix = '/'
+  size = 'shared-cpu-1x'
